@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Xml;
 
 namespace ClassLibrary
 {
@@ -91,7 +92,10 @@ namespace ClassLibrary
         {
             string str = "";
 
-            GoAround(Root, ref str);
+            if (Root != null)
+            {
+                GoAround(Root, ref str);
+            }
 
             return str;
         }
@@ -104,17 +108,20 @@ namespace ClassLibrary
         /// <param name="maxDepth">Макс. глубина дерева</param>
         private static void GoAround(Node node, int currentDepth, ref int maxDepth)
         {
-            if (node != null)
+            currentDepth++;
+
+            if (node.Left != null)
             {
-                currentDepth++;
-
                 GoAround(node.Left, currentDepth, ref maxDepth); //Идём в левое поддерево.
+            }
 
-                if (currentDepth > maxDepth)
-                {
-                    maxDepth = currentDepth;
-                }
+            if (currentDepth > maxDepth)
+            {
+                maxDepth = currentDepth;
+            }
 
+            if (node.Right != null)
+            {
                 GoAround(node.Right, currentDepth, ref maxDepth); //Идём в правое поддерево.
             }
         }
@@ -126,32 +133,45 @@ namespace ClassLibrary
         /// <param name="str">Строковое представление дерева (ЛКП)</param>
         private static void GoAround(Node node, ref string str)
         {
-            if (node != null)
+            if (node.Left != null)
             {
                 GoAround(node.Left, ref str);
+            }
 
-                str += node.Value + " ";
+            str += node.Value + " ";
 
+            if (node.Right != null)
+            {
                 GoAround(node.Right, ref str);
             }
         }
 
-        private Node FindPrevious(int a)
+        /// <summary>
+        /// Поиск узла перед узлом с заданным значением.
+        /// </summary>
+        /// <param name="nodeValue">Заданное значение узла</param>
+        /// <returns>Узел перед узлом с заданныи значением</returns>
+        private Node FindPrevious(int nodeValue)
         {
-            Node q = Root;
-            Node tmp = q;
+            Node current = Root;
+            Node Next = current;
 
-            while (tmp != null)
+            while (Next != null)
             {
-                q = tmp;
+                current = Next;
 
-                tmp = tmp.Value > a ? tmp.Left : tmp.Right;
+                Next = Next.Value > nodeValue ? Next.Left : Next.Right; //Сдвиг по дереву ближе к заданному числу.
             }
 
-            return q;
+            return current;
         }
 
-        private Node Find(int value)
+        /// <summary>
+        /// Поиск узла по заданному значению.
+        /// </summary>
+        /// <param name="nodeValue">Значение искомого узла</param>
+        /// <returns>Узел с искомым значением; null - нет искомого узла</returns>
+        private Node Find(int nodeValue)
         {
             if (Root == null)
             {
@@ -162,12 +182,12 @@ namespace ClassLibrary
 
             while (current != null)
             {
-                if (value > current.Value)
+                if (nodeValue > current.Value)
                 {
                     current = current.Right;
                 }
 
-                else if (value < current.Value)
+                else if (nodeValue < current.Value)
                 {
                     current = current.Left;
                 }
@@ -181,37 +201,52 @@ namespace ClassLibrary
             return null;
         }
 
-        public void Add(int a)
+        /// <summary>
+        /// Добавление узла с заданным значением.
+        /// </summary>
+        /// <param name="nodeValue">Значение добавляемого узла</param>
+        public void Add(int nodeValue)
         {
-            Node tmp = new Node(a);
+            Node addedNode = new Node(nodeValue);
 
             if (Root == null)
             {
-                Root = tmp;
+                Root = addedNode;
             }
 
             else
             {
-                Node q = FindPrevious(a);
+                Node current = FindPrevious(nodeValue);
 
-                if (tmp.Value < q.Value)
+                if (addedNode.Value < current.Value)
                 {
-                    q.Left = tmp;
-                    tmp.Parent = q;
+                    current.Left = addedNode;
+                    addedNode.Parent = current;
                 }
 
                 else
                 {
-                    q.Right = tmp;
-                    tmp.Parent = q;
+                    current.Right = addedNode;
+                    addedNode.Parent = current;
                 }
             }
         }
 
-        public bool DeleteNode(int value)
+        /// <summary>
+        /// Удаление узла с заданным значением.
+        /// </summary>
+        /// <param name="nodeValue">Значение удаляемого узла</param>
+        /// <returns>true - узел удалён; false - ничего не удалено</returns>
+        public bool DeleteNode(int nodeValue)
         {
-            Node deletedNode = Find(value);
+            if (Root == null)
+            {
+                throw new Exception("Дерево пустое - удалять нечего.");
+            }
 
+            Node deletedNode = Find(nodeValue);
+
+            //Если узла с заданным значением нет, то ничего не удаляем.
             if (deletedNode == null)
             {
                 return false;
@@ -219,14 +254,17 @@ namespace ClassLibrary
 
             Node current;
 
+            //Если удаляем корень.
             if (deletedNode == Root)
             {
+                //Если у корня есть правый наследник, то последний становится корнем.
                 if (deletedNode.Right != null)
                 {
                     current = Root.Right;
                     Root = current;
                 }
 
+                //Если у корня только левый наследник, то последний становится корнем.
                 else if (deletedNode.Left != null)
                 {
                     current = Root.Left;
@@ -236,6 +274,7 @@ namespace ClassLibrary
                     return true;
                 }
 
+                //Если у корня нет подузлов, то просто удаляем его.
                 else
                 {
                     Root = null;
@@ -248,8 +287,9 @@ namespace ClassLibrary
                     current = current.Left;
                 }
 
-                current.Left = Root.Parent.Left;
+                current.Left = Root.Parent.Left; //Самый левый узел (самое маленькое значение) правого поддерева становится родителем левого поддерева.
 
+                //Если левое поддерево непустое, то "подвязываем" его к самому левому узлу правого поддерева (см. выше).
                 if (Root.Parent.Left != null)
                 {
                     Root.Parent.Left.Parent = current;
@@ -260,6 +300,7 @@ namespace ClassLibrary
                 return true;
             }
 
+            //Если удаляем лист.
             if ((deletedNode.Left == null) && (deletedNode.Right == null))
             {
                 if (deletedNode == deletedNode.Parent.Left)
@@ -275,6 +316,7 @@ namespace ClassLibrary
                 return true;
             }
 
+            //Если удаляем узел, имеющий только левое поддерево.
             if ((deletedNode.Left != null) && (deletedNode.Right == null))
             {
                 deletedNode.Left.Parent = deletedNode.Parent;
@@ -292,6 +334,7 @@ namespace ClassLibrary
                 return true;
             }
 
+            //Если удаляем узел, имеющий только правое поддерево.
             if ((deletedNode.Left == null) && (deletedNode.Right != null))
             {
                 deletedNode.Right.Parent = deletedNode.Parent;
@@ -309,6 +352,7 @@ namespace ClassLibrary
                 return true;
             }
 
+            //Если удаляем узел, имеющий оба поддерева.
             if ((deletedNode.Left != null) && (deletedNode.Right != null))
             {
                 current = deletedNode.Right;
@@ -318,6 +362,7 @@ namespace ClassLibrary
                     current = current.Left;
                 }
 
+                //Если у правого наследника удаляемого узла нет левых наследников, то он просто замещает собой удаляемый узел.
                 if (current.Parent == deletedNode)
                 {
                     current.Left = deletedNode.Left;
@@ -337,6 +382,7 @@ namespace ClassLibrary
                     return true;
                 }
 
+                //Если у правого наследника удаляемого узла есть левые наследники, то самый левый узел правого поддерева становится на место удаляемого.
                 else
                 {
                     if (current.Right != null)
@@ -368,14 +414,20 @@ namespace ClassLibrary
             return false;
         }
 
-        public Node[][] GetArray()
+        /// <summary>
+        /// Получение ступенчатого массива, отражающего структуру дерева.
+        /// </summary>
+        /// <param name="treeArray">Массив для записи дерева</param>
+        public void GetArray(out Node[][] treeArray)
         {
             if (Root == null)
             {
-                return null;
+                treeArray = null;
+
+                return;
             }
 
-            Node[][] treeArray = new Node[Depth][];
+            treeArray = new Node[Depth][];
 
             for (int i = 0; i < treeArray.GetLength(0); i++)
             {
@@ -390,12 +442,14 @@ namespace ClassLibrary
                 {
                     for (int j = 0; j < treeArray[i - 1].Length; j++)
                     {
+                        //Если нет родителя, то нет и наследников.
                         if (treeArray[i - 1][j] == null)
                         {
                             treeArray[i][((j + 1) * 2) - 2] = null;
                             treeArray[i][((j + 1) * 2) - 1] = null;
                         }
 
+                        //Если родитель есть, то получаем наследников.
                         else
                         {
                             treeArray[i][((j + 1) * 2) - 2] = treeArray[i - 1][j].Left;
@@ -404,12 +458,13 @@ namespace ClassLibrary
                     }
                 }
             }
-
-            return treeArray;
         }
 
+        /// <summary>
+        /// Вывод дерева в консоль.
+        /// </summary>
         public void OutputTreeConsole()
-        {   
+        {
             string margin = new string(' ', 30);
 
             Console.WriteLine(new string(' ', 27) + "Дерево:\n");
@@ -421,9 +476,9 @@ namespace ClassLibrary
 
             else
             {
-                Node[][] treeArray = GetArray();
+                GetArray(out Node[][] treeArray);
 
-                
+
                 string marginElement = new string(' ', 10);
 
                 for (int i = 0; i < treeArray.GetLength(0); i++)
