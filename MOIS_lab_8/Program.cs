@@ -35,227 +35,17 @@ namespace MOIS_lab_8
         }
 
         /// <summary>
-        /// Получение левого листа дерева.
-        /// </summary>
-        /// <param name="tree">Обрабатываемое дерево</param>
-        /// <returns>Левый узел-лист</returns>
-        public static Tree.Node GetLeftLeaf(Tree tree)
-        {
-            if (tree.Root == null)
-            {
-                throw new Exception("Дерево пусто - нет листов.");
-            }
-
-            Tree.Node current = tree.Root;
-
-            //Пока не дошли до листа, спускаемся вниз по дереву.
-            while (current.Left != null || current.Right != null)
-            {
-                if (current.Left != null)
-                {
-                    current = current.Left;
-
-                    continue;
-                }
-
-                current = current.Right;
-            }
-
-            return current;
-        }
-
-        /// <summary>
-        /// Получение левого листа дерева с записью пути.
-        /// </summary>
-        /// <param name="currentWay">Текущий путь</param>
-        /// <param name="current">Текущий узел</param>
-        /// <returns>Левый узел-лист</returns>
-        private static Tree.Node GetLeftLeaf(List<Tree.Node> currentWay, Tree.Node current)
-        {
-            //Пока не дошли до листа, спускаемся вниз по дереву.
-            while (current.Left != null || current.Right != null)
-            {
-                if (current.Left != null)
-                {
-                    current = current.Left;
-
-                    currentWay.Add(current);
-
-                    continue;
-                }
-
-                current = current.Right;
-
-                currentWay.Add(current);
-            }
-
-            return current;
-        }
-
-        /// <summary>
-        /// Перебор всех путей от текущего листа до др. листьев правее текущего.
-        /// </summary>
-        /// <param name="minMaxWays">Мин. и макс. пути</param>
-        /// <param name="current">Текущий узел</param>
-        private static void FindWaysToLeaves(List<Tree.Node>[] minMaxWays, Tree.Node current)
-        {
-            List<Tree.Node> currentWay = new List<Tree.Node>();
-
-            bool isNextLeafActivated = false;
-
-            currentWay.Add(current);
-
-            //Пока не перебраны все пути от текущего листа до др. листьев правее, продолжаем перебирать оставшиеся пути.
-            while ((current.Parent.Parent != null) || ((current.Parent.Left == current) && (current.Parent.Right != null)))
-            {
-                //Если мы поднимаемся к родителю слева и есть возможность перейти к правому брату, то переходим к нему.
-                if ((current.Parent.Left == current) && (current.Parent.Right != null))
-                {
-                    if (currentWay.Contains(current.Parent))
-                    {
-                        currentWay.RemoveAt(currentWay.Count - 1);
-                    }
-
-                    else
-                    {
-                        currentWay.Add(current.Parent);
-                    }
-
-                    current = current.Parent.Right;
-
-                    currentWay.Add(current);
-
-                    current = GetLeftLeaf(currentWay, current);
-
-                    if (!isNextLeafActivated)
-                    {
-                        FindWaysToLeaves(minMaxWays, current);
-
-                        isNextLeafActivated = true;
-                    }
-
-                    if (minMaxWays[0] == null)
-                    {
-                        minMaxWays[0] = new List<Tree.Node>(currentWay);
-                        minMaxWays[1] = new List<Tree.Node>(currentWay);
-                    }
-
-                    else
-                    {
-                        if (currentWay.Count < minMaxWays[0].Count)
-                        {
-                            minMaxWays[0] = new List<Tree.Node>(currentWay);
-                        }
-
-                        if (currentWay.Count > minMaxWays[1].Count)
-                        {
-                            minMaxWays[1] = new List<Tree.Node>(currentWay);
-                        }
-                    }
-                }
-
-                //Если мы поднимаемся к родителю справа или мы поднимаемся слева и вместе с тем нет возможности перейти к правому брату, то переходим к родителю.
-                else
-                {
-                    if (currentWay.Contains(current.Parent))
-                    {
-                        currentWay.RemoveAt(currentWay.Count - 1);
-                    }
-
-                    else
-                    {
-                        currentWay.Add(current.Parent);
-                    }
-
-                    current = current.Parent;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Нахождение мин. и макс. путей (по длине) между листьями.
-        /// </summary>
-        /// <param name="tree">Обрабатываемое дерево</param>
-        /// <param name="minMaxWay">Мин. и макс. пути между листьями</param>
-        public static void GetMinMaxWay(Tree tree, out List<Tree.Node>[] minMaxWay)
-        {
-            Tree.Node currentLeaf = GetLeftLeaf(tree);
-
-            minMaxWay = new List<Tree.Node>[2];
-
-            if (currentLeaf == tree.Root)
-            {
-                throw new Exception("Лист только 1 - нет путей.");
-            }
-
-            FindWaysToLeaves(minMaxWay, currentLeaf);
-        }
-
-        /// <summary>
         /// Вывод пути в консоль.
         /// </summary>
-        /// <param name="list">Список-путь с узлами</param>
-        public static void Output(List<Tree.Node> list)
+        /// <param name="list">Список-путь со значениями узлов</param>
+        public static void Output(List<int> list)
         {
-            foreach (Tree.Node element in list)
+            foreach (int element in list)
             {
-                Console.Write(element.Value + " ");
+                Console.Write(element + " ");
             }
 
             Console.WriteLine();
-        }
-
-        /// <summary>
-        /// Рекурсивное дополнение поддерева единицами.
-        /// </summary>
-        /// <param name="current">Текущий узел</param>
-        /// <param name="currentDepth">Текущая глубина дерева</param>
-        /// <param name="maxDepth">Макс. глубина дерева</param>
-        private static void GoAroundAdding(Tree.Node current, int currentDepth, int maxDepth)
-        {
-            currentDepth++;
-
-            //Если нет левого сына и глубина дерева не макс., то добавляем левого сына со значением 1.
-            if (current.Left == null && currentDepth < maxDepth)
-            {
-                current.Left = new Tree.Node(1)
-                {
-                    Parent = current
-                };
-            }
-
-            if (current.Left != null)
-            {
-                GoAroundAdding(current.Left, currentDepth, maxDepth); //Идём в левое поддерево.
-            }
-
-            //Если нет правого сына и глубина дерева не макс., то добавляем правого сына со значением 1.
-            if (current.Right == null && currentDepth < maxDepth)
-            {
-                current.Right = new Tree.Node(1)
-                {
-                    Parent = current
-                };
-            }
-
-            if (current.Right != null)
-            {
-                GoAroundAdding(current.Right, currentDepth, maxDepth); //Идём в правое поддерево.
-            }
-        }
-
-        /// <summary>
-        /// Дополнение дерева.
-        /// </summary>
-        /// <param name="tree">Дополняемое дерево</param>
-        public static void AddToTree(Tree tree)
-        {
-            if (tree.Root == null)
-            {
-                throw new Exception("Дерево пусто - дополнять нечего.");
-            }
-
-            GoAroundAdding(tree.Root, 0, tree.Depth);
         }
 
         static void Main()
@@ -296,7 +86,7 @@ namespace MOIS_lab_8
 
                         break;
                     case 3:
-                        if (tree.Root == null)
+                        if (tree.Depth == 0)
                         {
                             Console.WriteLine("Дерево пустое - удалять нечего.");
 
@@ -319,7 +109,7 @@ namespace MOIS_lab_8
                     case 4:
                         try
                         {
-                            GetMinMaxWay(tree, out List<Tree.Node>[] minMaxWay);
+                            tree.GetMinMaxWay(out List<int>[] minMaxWay);
 
                             Console.Write("Мин. путь  (длина " + (minMaxWay[0].Count - 1) + "): ");
 
@@ -341,9 +131,9 @@ namespace MOIS_lab_8
                     case 5:
                         try
                         {
-                            tree.GetArray(out Tree.Node[][] treeArray);
+                            tree.ToArray(out int?[][] treeArray);
 
-                            AddToTree(tree);
+                            tree.AddToTree();
 
                             if (treeArray[treeArray.GetLength(0) - 1].Contains(null))
                             {

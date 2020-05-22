@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 
 namespace ClassLibrary
@@ -11,7 +12,7 @@ namespace ClassLibrary
         /// <summary>
         /// Класс узла.
         /// </summary>
-        public class Node
+        private class Node
         {
             /// <summary>
             /// Значение узла.
@@ -62,7 +63,7 @@ namespace ClassLibrary
         /// <summary>
         /// Корень дерева.
         /// </summary>
-        public Node Root { get; private set; } = null;
+        private Node Root { get; set; } = null;
 
         /// <summary>
         /// Глубина дерева.
@@ -417,44 +418,80 @@ namespace ClassLibrary
         /// <summary>
         /// Получение ступенчатого массива, отражающего структуру дерева.
         /// </summary>
-        /// <param name="treeArray">Массив для записи дерева</param>
-        public void GetArray(out Node[][] treeArray)
+        /// <param name="nodeArray">Массив для записи дерева</param>
+        private void ToArray(out Node[][] nodeArray)
         {
-            if (Root == null)
+            //if (Root == null)
+            //{
+            //    treeArray = null;
+
+            //    return;
+            //}
+
+            nodeArray = new Node[Depth][];
+
+            for (int i = 0; i < nodeArray.GetLength(0); i++)
             {
-                treeArray = null;
-
-                return;
-            }
-
-            treeArray = new Node[Depth][];
-
-            for (int i = 0; i < treeArray.GetLength(0); i++)
-            {
-                treeArray[i] = new Node[(int)Math.Pow(2, i)];
+                nodeArray[i] = new Node[(int)Math.Pow(2, i)];
 
                 if (i == 0)
                 {
-                    treeArray[0][0] = Root;
+                    nodeArray[0][0] = Root;
                 }
 
                 else
                 {
-                    for (int j = 0; j < treeArray[i - 1].Length; j++)
+                    for (int j = 0; j < nodeArray[i - 1].Length; j++)
                     {
                         //Если нет родителя, то нет и наследников.
-                        if (treeArray[i - 1][j] == null)
+                        if (nodeArray[i - 1][j] == null)
                         {
-                            treeArray[i][((j + 1) * 2) - 2] = null;
-                            treeArray[i][((j + 1) * 2) - 1] = null;
+                            nodeArray[i][((j + 1) * 2) - 2] = null;
+                            nodeArray[i][((j + 1) * 2) - 1] = null;
                         }
 
                         //Если родитель есть, то получаем наследников.
                         else
                         {
-                            treeArray[i][((j + 1) * 2) - 2] = treeArray[i - 1][j].Left;
-                            treeArray[i][((j + 1) * 2) - 1] = treeArray[i - 1][j].Right;
+                            nodeArray[i][((j + 1) * 2) - 2] = nodeArray[i - 1][j].Left;
+                            nodeArray[i][((j + 1) * 2) - 1] = nodeArray[i - 1][j].Right;
                         }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Перевод дерева в массив значений.
+        /// </summary>
+        /// <param name="valueArray">Массив значений для записи</param>
+        public void ToArray(out int?[][] valueArray)
+        {
+            if (Root == null)
+            {
+                valueArray = null;
+
+                return;
+            }
+
+            ToArray(out Node[][] nodeArray);
+
+            valueArray = new int?[nodeArray.GetLength(0)][];
+
+            for (int i = 0; i < valueArray.GetLength(0); i++)
+            {
+                valueArray[i] = new int?[nodeArray[i].Length];
+
+                for (int j = 0; j < nodeArray[i].Length; j++)
+                {
+                    if (nodeArray[i][j] == null)
+                    {
+                        valueArray[i][j] = null;
+                    }
+
+                    else
+                    {
+                        valueArray[i][j] = nodeArray[i][j].Value;
                     }
                 }
             }
@@ -476,7 +513,7 @@ namespace ClassLibrary
 
             else
             {
-                GetArray(out Node[][] treeArray);
+                ToArray(out int?[][] treeArray);
 
 
                 string marginElement = new string(' ', 10);
@@ -507,7 +544,7 @@ namespace ClassLibrary
 
                         else
                         {
-                            Console.Write(treeArray[i][j].Value + margin + margin);
+                            Console.Write(treeArray[i][j] + margin + margin);
                         }
                     }
 
@@ -516,6 +553,229 @@ namespace ClassLibrary
             }
 
             Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Получение левого листа дерева.
+        /// </summary>
+        /// <returns>Левый узел-лист</returns>
+        private Node GetLeftLeaf()
+        {
+            if (Root == null)
+            {
+                throw new Exception("Дерево пусто - нет листов.");
+            }
+
+            Node current = Root;
+
+            //Пока не дошли до листа, спускаемся вниз по дереву.
+            while (current.Left != null || current.Right != null)
+            {
+                if (current.Left != null)
+                {
+                    current = current.Left;
+
+                    continue;
+                }
+
+                current = current.Right;
+            }
+
+            return current;
+        }
+
+        /// <summary>
+        /// Получение левого листа дерева с записью пути.
+        /// </summary>
+        /// <param name="currentWay">Текущий путь</param>
+        /// <param name="current">Текущий узел</param>
+        /// <returns>Левый узел-лист</returns>
+        private Node GetLeftLeaf(List<Node> currentWay, Node current)
+        {
+            //Пока не дошли до листа, спускаемся вниз по дереву.
+            while (current.Left != null || current.Right != null)
+            {
+                if (current.Left != null)
+                {
+                    current = current.Left;
+
+                    currentWay.Add(current);
+
+                    continue;
+                }
+
+                current = current.Right;
+
+                currentWay.Add(current);
+            }
+
+            return current;
+        }
+
+        /// <summary>
+        /// Перебор всех путей от текущего листа до др. листьев правее текущего.
+        /// </summary>
+        /// <param name="minMaxWays">Мин. и макс. пути</param>
+        /// <param name="current">Текущий узел</param>
+        private void FindWaysToLeaves(List<int>[] minMaxWays, Node current)
+        {
+            List<Node> currentWay = new List<Node>();
+
+            bool isNextLeafActivated = false;
+
+            currentWay.Add(current);
+
+            //Пока не перебраны все пути от текущего листа до др. листьев правее, продолжаем перебирать оставшиеся пути.
+            while ((current.Parent.Parent != null) || ((current.Parent.Left == current) && (current.Parent.Right != null)))
+            {
+                //Если мы поднимаемся к родителю слева и есть возможность перейти к правому брату, то переходим к нему.
+                if ((current.Parent.Left == current) && (current.Parent.Right != null))
+                {
+                    if (currentWay.Contains(current.Parent))
+                    {
+                        currentWay.RemoveAt(currentWay.Count - 1);
+                    }
+
+                    else
+                    {
+                        currentWay.Add(current.Parent);
+                    }
+
+                    current = current.Parent.Right;
+
+                    currentWay.Add(current);
+
+                    current = GetLeftLeaf(currentWay, current);
+
+                    if (!isNextLeafActivated)
+                    {
+                        FindWaysToLeaves(minMaxWays, current);
+
+                        isNextLeafActivated = true;
+                    }
+
+                    if (minMaxWays[0] == null)
+                    {
+                        minMaxWays[0] = new List<int>(currentWay.Count);
+                        minMaxWays[1] = new List<int>(currentWay.Count);
+
+                        foreach (Node node in currentWay)
+                        {
+                            minMaxWays[0].Add(node.Value);
+                            minMaxWays[1].Add(node.Value);
+                        }
+                    }
+
+                    else
+                    {
+                        if (currentWay.Count < minMaxWays[0].Count)
+                        {
+                            minMaxWays[0].Clear();
+
+                            foreach (Node node in currentWay)
+                            {
+                                minMaxWays[0].Add(node.Value);
+                            }
+                        }
+
+                        if (currentWay.Count > minMaxWays[1].Count)
+                        {
+                            minMaxWays[1].Clear();
+
+                            foreach (Node node in currentWay)
+                            {
+                                minMaxWays[1].Add(node.Value);
+                            }
+                        }
+                    }
+                }
+
+                //Если мы поднимаемся к родителю справа или мы поднимаемся слева и вместе с тем нет возможности перейти к правому брату, то переходим к родителю.
+                else
+                {
+                    if (currentWay.Contains(current.Parent))
+                    {
+                        currentWay.RemoveAt(currentWay.Count - 1);
+                    }
+
+                    else
+                    {
+                        currentWay.Add(current.Parent);
+                    }
+
+                    current = current.Parent;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Нахождение мин. и макс. путей (по длине) между листьями.
+        /// </summary>
+        /// <param name="minMaxWay">Мин. и макс. пути между листьями</param>
+        public void GetMinMaxWay(out List<int>[] minMaxWay)
+        {
+            Node currentLeaf = GetLeftLeaf();
+
+            minMaxWay = new List<int>[2];
+
+            if (currentLeaf == Root)
+            {
+                throw new Exception("Лист только 1 - нет путей.");
+            }
+
+            FindWaysToLeaves(minMaxWay, currentLeaf);
+        }
+
+        /// <summary>
+        /// Рекурсивное дополнение поддерева единицами.
+        /// </summary>
+        /// <param name="current">Текущий узел</param>
+        /// <param name="currentDepth">Текущая глубина дерева</param>
+        /// <param name="maxDepth">Макс. глубина дерева</param>
+        private void GoAroundAdding(Node current, int currentDepth, int maxDepth)
+        {
+            currentDepth++;
+
+            //Если нет левого сына и глубина дерева не макс., то добавляем левого сына со значением 1.
+            if (current.Left == null && currentDepth < maxDepth)
+            {
+                current.Left = new Node(1)
+                {
+                    Parent = current
+                };
+            }
+
+            if (current.Left != null)
+            {
+                GoAroundAdding(current.Left, currentDepth, maxDepth); //Идём в левое поддерево.
+            }
+
+            //Если нет правого сына и глубина дерева не макс., то добавляем правого сына со значением 1.
+            if (current.Right == null && currentDepth < maxDepth)
+            {
+                current.Right = new Node(1)
+                {
+                    Parent = current
+                };
+            }
+
+            if (current.Right != null)
+            {
+                GoAroundAdding(current.Right, currentDepth, maxDepth); //Идём в правое поддерево.
+            }
+        }
+
+        /// <summary>
+        /// Дополнение дерева.
+        /// </summary>
+        public void AddToTree()
+        {
+            if (Root == null)
+            {
+                throw new Exception("Дерево пусто - дополнять нечего.");
+            }
+
+            GoAroundAdding(Root, 0, Depth);
         }
     }
 }
