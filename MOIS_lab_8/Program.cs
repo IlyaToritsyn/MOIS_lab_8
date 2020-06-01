@@ -111,13 +111,21 @@ namespace MOIS_lab_8
                         {
                             tree.GetMinMaxWay(out List<int>[] minMaxWay);
 
-                            Console.Write("Мин. путь  (длина " + (minMaxWay[0].Count - 1) + "): ");
+                            if (minMaxWay[0] != null)
+                            {
+                                Console.Write("Мин. путь  (длина " + (minMaxWay[0].Count - 1) + "): ");
 
-                            Output(minMaxWay[0]);
+                                Output(minMaxWay[0]);
 
-                            Console.Write("Макс. путь (длина " + (minMaxWay[1].Count - 1) + "): ");
+                                Console.Write("Макс. путь (длина " + (minMaxWay[1].Count - 1) + "): ");
 
-                            Output(minMaxWay[1]);
+                                Output(minMaxWay[1]);
+                            }
+
+                            else
+                            {
+                                Console.WriteLine("Только 1 лист - нет ни одного пути.");
+                            }
 
                             System.Threading.Thread.Sleep(10000);
                         }
@@ -135,6 +143,7 @@ namespace MOIS_lab_8
 
                             tree.AddToTree();
 
+                            //Если дерево было неполным, то оно должно было дополниться единицами. Сообщаем пользователю об успехе дополнения.
                             if (treeArray[treeArray.GetLength(0) - 1].Contains(null))
                             {
                                 Console.WriteLine("Дерево успешно дополнено единицами.");
